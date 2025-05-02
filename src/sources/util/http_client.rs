@@ -43,6 +43,7 @@ pub(crate) struct GenericHttpClientInputs {
     pub headers: HashMap<String, Vec<String>>,
     /// Content type of the HTTP request, determined by the source.
     pub content_type: String,
+    pub body: String,
     pub auth: Option<Auth>,
     pub tls: TlsSettings,
     pub proxy: ProxyConfig,
@@ -171,12 +172,18 @@ pub(crate) async fn call<
             }
 
             // building an empty request should be infallible
-            let mut request = builder.body(Body::empty()).expect("error creating request");
+            let body = if inputs.body.is_empty() {
+                Body::empty()
+            } else {
+                Body::from(inputs.body.clone())
+            };
+
+            let mut request = builder.body(body).expect("error creating request");
 
             if let Some(auth) = &inputs.auth {
                 auth.apply(&mut request);
             }
-
+            
             tokio::time::timeout(inputs.timeout, client.send(request))
                 .then(move |result| async move {
                     match result {

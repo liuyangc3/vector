@@ -105,6 +105,11 @@ pub struct HttpClientConfig {
     #[serde(default = "default_http_method")]
     pub method: HttpMethod,
 
+    /// The HTTP request body.
+    #[serde(default)]
+    #[configurable(metadata(docs::examples = r#"{"key": "value"}"#))]
+    pub body: String,
+
     /// TLS configuration.
     #[configurable(derived)]
     pub tls: Option<TlsConfig>,
@@ -169,6 +174,7 @@ impl Default for HttpClientConfig {
             framing: default_framing_message_based(),
             headers: HashMap::new(),
             method: default_http_method(),
+            body: String::new(),
             tls: None,
             auth: None,
             log_namespace: None,
@@ -213,6 +219,7 @@ impl SourceConfig for HttpClientConfig {
             timeout: self.timeout,
             headers: self.headers.clone(),
             content_type,
+            body: self.body.clone(),
             auth: self.auth.clone(),
             tls,
             proxy: cx.proxy.clone(),

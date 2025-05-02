@@ -97,6 +97,7 @@ async fn bytes_decoding() {
         tls: None,
         auth: None,
         log_namespace: None,
+        body: "".to_string(),
     })
     .await;
 }
@@ -126,6 +127,7 @@ async fn json_decoding_newline_delimited() {
         tls: None,
         auth: None,
         log_namespace: None,
+        body: "".to_string(),
     })
     .await;
 }
@@ -160,6 +162,7 @@ async fn json_decoding_character_delimited() {
         tls: None,
         auth: None,
         log_namespace: None,
+        body: "".to_string(),
     })
     .await;
 }
@@ -197,6 +200,7 @@ async fn request_query_applied() {
         tls: None,
         auth: None,
         log_namespace: None,
+        body: "".to_string(),
     })
     .await;
 
@@ -261,6 +265,7 @@ async fn headers_applied() {
         auth: None,
         tls: None,
         log_namespace: None,
+        body: "".to_string(),
     })
     .await;
 }
@@ -290,6 +295,43 @@ async fn accept_header_override() {
         auth: None,
         tls: None,
         log_namespace: None,
+        body: "".to_string(),
+    })
+    .await;
+}
+
+/// HTTP request body configured by the user should be applied correctly.
+#[tokio::test]
+async fn body_applied() {
+    let in_addr = next_addr();
+
+    let dummy_endpoint = warp::path!("endpoint")
+        .and(warp::body::bytes())
+        .map(|body: bytes::Bytes| {
+            // Validate the body is equal to the expected value
+            assert_eq!(body.len(), 3);
+            assert_eq!(body[0], b'f');
+            assert_eq!(body[1], b'o');
+            assert_eq!(body[2], b'o');
+            r#"{"data" : "foo"}"#
+        });
+
+    tokio::spawn(warp::serve(dummy_endpoint).run(in_addr));
+    wait_for_tcp(in_addr).await;
+
+    run_compliance(HttpClientConfig {
+        endpoint: format!("http://{}/endpoint", in_addr),
+        interval: INTERVAL,
+        timeout: TIMEOUT,
+        query: HashMap::new(),
+        decoding: DeserializerConfig::Json(Default::default()),
+        framing: default_framing_message_based(),
+        headers: HashMap::new(),
+        method: HttpMethod::Post,
+        auth: None,
+        tls: None,
+        log_namespace: None,
+        body: "foo".to_string(),
     })
     .await;
 }
