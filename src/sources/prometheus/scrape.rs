@@ -161,6 +161,7 @@ impl SourceConfig for PrometheusScrapeConfig {
             tls,
             proxy: cx.proxy.clone(),
             shutdown: cx.shutdown,
+            body: String::new()
         };
 
         Ok(call(inputs, builder, cx.out, HttpMethod::Get).boxed())
